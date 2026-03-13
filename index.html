@@ -1,0 +1,258 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>HTML → Quiz Generator</title>
+    x`
+    <style>
+      #htmlInput {
+        display: none;
+      }
+      body {
+        font-family: Arial;
+        background: #f4f4f4;
+        margin: 40px;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      textarea {
+        width: 100%;
+        height: 300px;
+        margin-bottom: 20px;
+      }
+
+      .question {
+        margin-bottom: 25px;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      button {
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .result {
+        font-size: 22px;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .correct {
+        color: green;
+        font-weight: bold;
+      }
+
+      .wrong {
+        color: red;
+        font-weight: bold;
+      }
+
+      .correct-answer {
+        background: #e6ffe6;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>Load HTML Questions File</h2>
+
+      <!-- <input type="file" id="fileInput" accept=".txt,.html" id="htmlInput" /> -->
+
+      <textarea
+        id="htmlInput"
+        placeholder="File content will appear here"
+      ></textarea>
+
+      <div style="text-align: center">
+        <button onclick="loadTxt('test1.txt')">Test 1</button>
+        <button onclick="loadTxt('test2.txt')">Test 2</button>
+        <button onclick="loadTxt('test3.txt')">Test 3</button>
+        <button onclick="loadTxt('test4.txt')">Test 4</button>
+        <button onclick="loadTxt('test5.txt')">Test 5</button>
+        <button onclick="loadTxt('test6.txt')">Test 6</button>
+        <button onclick="loadTxt('test7.txt')">Test 7</button>
+        <button onclick="loadTxt('test8.txt')">Test 8</button>
+        <button onclick="loadTxt('test9.txt')">Test 9</button>
+        <button onclick="loadTxt('test10.txt')">Test 10</button>
+        <button onclick="loadTxt('test11.txt')">Test 11</button>
+        <button onclick="loadTxt('test12.txt')">Test 12</button>
+        <button onclick="resetQuiz()">Reset</button>
+      </div>
+
+      <form id="quiz"></form>
+      <div style="text-align: center">
+        <button onclick="submitQuiz()">Submit</button>
+      </div>
+
+      <div id="result" class="result"></div>
+    </div>
+
+    <script>
+      let questions = [];
+      let shuffled = [];
+
+      // AUTO LOAD FILE
+      document
+        .getElementById("fileInput")
+        .addEventListener("change", function () {
+          const file = this.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+
+          reader.onload = function (e) {
+            const content = e.target.result;
+
+            document.getElementById("htmlInput").value = content;
+
+            // auto generate quiz
+            generateQuiz();
+          };
+
+          reader.readAsText(file);
+        });
+
+      function loadTxt(fileName) {
+        fetch(fileName)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("Cannot load TXT file");
+            }
+            return res.text();
+          })
+          .then((text) => {
+            console.log("TXT size:", text.length);
+
+            // đưa text vào htmlInput
+            document.getElementById("htmlInput").value = text;
+
+            // generate quiz
+            generateQuiz();
+          })
+          .catch((err) => {
+            console.error(err);
+            alert("Failed to load TXT file");
+          });
+      }
+      function generateQuiz() {
+        const html = document.getElementById("htmlInput").value;
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        const questionBlocks = doc.querySelectorAll(
+          ".result-pane--question-result-pane-wrapper--2bGiz",
+        );
+
+        questions = [];
+
+        questionBlocks.forEach((block) => {
+          const q = block.querySelector("#question-prompt")?.innerText.trim();
+
+          const answers = [...block.querySelectorAll("#answer-text")].map((a) =>
+            a.innerText.trim(),
+          );
+
+          const correctIndex = [
+            ...block.querySelectorAll(
+              ".result-pane--answer-result-pane--Niazi",
+            ),
+          ].findIndex((a) =>
+            a.querySelector(".answer-result-pane--answer-correct--PLOEU"),
+          );
+
+          questions.push({
+            q: q,
+            options: answers,
+            answer: correctIndex,
+          });
+        });
+
+        render();
+      }
+
+      function shuffle(arr) {
+        return arr.sort(() => Math.random() - 0.5);
+      }
+
+      function render() {
+        const quiz = document.getElementById("quiz");
+        quiz.innerHTML = "";
+
+        shuffled = shuffle([...questions]);
+
+        shuffled.forEach((q, i) => {
+          let div = document.createElement("div");
+          div.className = "question";
+
+          let html = `<p><b>${i + 1}. ${q.q}</b></p>`;
+
+          q.options.forEach((opt, j) => {
+            html += `
+<label>
+<input type="radio" name="q${i}" value="${j}">
+${opt}
+</label><br>
+`;
+          });
+
+          div.innerHTML = html;
+          quiz.appendChild(div);
+        });
+      }
+
+      function submitQuiz() {
+        let score = 0;
+
+        shuffled.forEach((q, i) => {
+          let radios = document.querySelectorAll(`input[name="q${i}"]`);
+          let ans = document.querySelector(`input[name="q${i}"]:checked`);
+
+          radios.forEach((r, index) => {
+            let label = r.parentElement;
+
+            // highlight correct answer
+            if (index === q.answer) {
+              label.classList.add("correct-answer");
+            }
+
+            // user selected wrong
+            if (ans && Number(ans.value) !== q.answer && r.checked) {
+              label.classList.add("wrong");
+            }
+
+            // user selected correct
+            if (ans && Number(ans.value) === q.answer && r.checked) {
+              label.classList.add("correct");
+            }
+          });
+
+          if (ans && Number(ans.value) === q.answer) {
+            score++;
+          }
+        });
+
+        document.getElementById("result").innerHTML =
+          `Score: ${score} / ${questions.length}`;
+      }
+
+      function resetQuiz() {
+        document.getElementById("result").innerHTML = "";
+        render();
+      }
+    </script>
+  </body>
+</html>
