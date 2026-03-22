@@ -118,6 +118,7 @@
           Test 12
         </button>
         <button onclick="resetQuiz()">Reset</button>
+        <button onclick="reTest()">ReTest</button>
       </div>
 
       <form id="quiz"></form>
@@ -285,6 +286,22 @@ ${opt}
       function resetQuiz() {
         document.getElementById("result").innerHTML = "";
         render();
+      }
+      function reTest() {
+        // clear result
+        document.getElementById("result").innerHTML = "";
+
+        // bỏ chọn tất cả radio
+        document.querySelectorAll('input[type="radio"]').forEach((r) => {
+          r.checked = false;
+        });
+
+        // remove highlight class
+        document
+          .querySelectorAll(".correct, .wrong, .correct-answer")
+          .forEach((el) => {
+            el.classList.remove("correct", "wrong", "correct-answer");
+          });
       }
     </script>
   </body>
